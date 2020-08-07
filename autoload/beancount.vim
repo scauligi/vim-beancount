@@ -122,6 +122,10 @@ function! beancount#get_root() abort
     if exists('b:beancount_root')
         return b:beancount_root
     endif
+    let l:rootname = matchstr(getline(2), 'root:\s*\zs.*')
+    if l:rootname != ""
+      return expand('%:p:h') . '/' . l:rootname
+    endif
     return expand('%')
 endfunction
 
@@ -252,9 +256,44 @@ endfunction
 
 " Call bean-doctor on the current line and dump output into a scratch buffer
 function! beancount#get_context() abort
-    let l:context = system('bean-doctor context ' . expand('%') . ' ' . line('.'))
+    let l:root = beancount#get_root()
+    let l:context = system('bean-doctor context ' . l:root . ' ' . expand('%') . ':' . line('.'))
     botright new
-    setlocal buftype=nofile bufhidden=hide noswapfile
+    setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
     call append(0, split(l:context, '\v\n'))
+    %substitute/^\*/ /e
+    call search('^-\+ Transaction')
+    normal! 2jzt
+endfunction
+
+" Call bean-doctor on the current line and dump output into a scratch buffer
+function! beancount#get_linked() abort
+    let l:root = beancount#get_root()
+    let l:context = system('bean-doctor linked ' . l:root . ' ' . expand('%') . ':' . line('.'))
+    botright new
+    setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
+    call append(0, split(l:context, '\v\n'))
+    %substitute/^   //e
     normal! gg
+endfunction
+
+" Expand all folds with prompted pattern
+function! beancount#explode_folds() abort
+    let l:cur = getcurpos()
+    call inputsave()
+    let l:pattern = input('/')
+    call inputrestore()
+    if l:pattern == ""
+        return
+    endif
+    if l:pattern[-1:] != "/"
+        let @/ = l:pattern
+        let l:pattern .= "/"
+    else
+        let @/ = l:pattern[:-2]
+    endif
+    let l:pattern = '/' . l:pattern
+    execute  "silent folddoclosed " . l:pattern . " foldopen"
+    call setpos('.', l:cur)
+    let &hlsearch=1
 endfunction
