@@ -10,7 +10,7 @@ endif
 let s:cpo_save = &cpoptions
 set cpoptions-=C
 
-CompilerSet makeprg=bean-check\ %
+exec "CompilerSet makeprg=bean-check\\" beancount#get_root()
 CompilerSet errorformat=%-G         " Skip blank lines
 CompilerSet errorformat+=%f:%l:\ %m  " File:line: message
 CompilerSet errorformat+=%-G\ %.%#   " Skip indented lines.

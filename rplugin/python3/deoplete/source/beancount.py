@@ -88,6 +88,7 @@ class Source(Base):
         entries, _, options = load_file(self.beancount_root)
 
         accounts = set()
+        closed_accounts = set()
         events = set()
         links = set()
         payees = set()
@@ -96,6 +97,8 @@ class Source(Base):
         for entry in entries:
             if isinstance(entry, data.Open):
                 accounts.add(entry.account)
+            elif isinstance(entry, data.Close):
+                closed_accounts.add(entry.account)
             elif isinstance(entry, data.Transaction):
                 if entry.payee:
                     payees.add(entry.payee)
@@ -106,6 +109,7 @@ class Source(Base):
             if isinstance(entry, data.Event):
                 events.add(entry.type)
 
+        accounts.difference_update(closed_accounts)
         self.attributes = {
             'accounts': [
                 {'word': x, 'kind': 'account'} for x in sorted(accounts)],

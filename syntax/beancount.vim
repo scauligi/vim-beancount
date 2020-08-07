@@ -14,7 +14,8 @@ syn match beanMarker "\v(\{\{\{|\}\}\})\d?" contained
 syn region beanString start='"' skip='\\"' end='"' contained
 syn match beanAmount "\v[-+]?[[:digit:].,]+" nextgroup=beanCurrency contained
             \ skipwhite
-syn match beanCurrency "\v\w+" contained
+syn match beanCurrency "\v\C[A-Z][0-9A-Z]*" contained
+syn keyword beanBool TRUE FALSE contained
 " Account name: alphanumeric with at least one colon.
 syn match beanAccount "\v[[:alnum:]]+:[-[:alnum:]:]+" contained
 syn match beanTag "\v#[-[:alnum:]]+" contained
@@ -26,7 +27,7 @@ syn match beanFlag "\v[*!&#?%PSTCURM]\s\@=" contained
 
 " Most directives start with a date.
 syn match beanDate "^\v\d{4}[-/]\d{2}[-/]\d{2}" skipwhite
-            \ nextgroup=beanOpen,beanTxn,beanClose,beanCommodity,beanNote,beanBalance,beanEvent,beanPad,beanPrice
+            \ nextgroup=beanOpen,beanTxn,beanClose,beanCommodity,beanNote,beanBalance,beanEvent,beanPad,beanPrice,beanCustom
 " Options and events have two string arguments. The first, we are matching as
 " beanOptionTitle and the second as a regular string.
 syn region beanOption matchgroup=beanKeyword start="^option" end="$"
@@ -39,8 +40,8 @@ syn region beanEvent matchgroup=beanKeyword start="event" end="$" contained
             \ keepend contains=beanOptionTitle,beanComment
 syn region beanOptionTitle start='"' skip='\\"' end='"' contained
             \ nextgroup=beanString skipwhite
-syn region beanOpen matchgroup=beanKeyword start="open" end="$" keepend
-            \ contained contains=beanAccount,beanCurrency,beanComment
+syn region beanOpen matchgroup=beanKeyword start="open" skip="^\s" end="^" keepend
+            \ contained contains=beanAccount,beanCurrency,beanComment,beanMeta fold
 syn region beanClose matchgroup=beanKeyword start="close" end="$" keepend
             \ contained contains=beanAccount,beanComment
 syn region beanCommodity matchgroup=beanKeyword start="commodity" end="$" keepend
@@ -55,22 +56,39 @@ syn region beanPushTag matchgroup=beanKeyword start="\v^(push|pop)tag" end="$"
             \ keepend contains=beanTag
 syn region beanPad matchgroup=beanKeyword start="pad" end="$" contained
             \ keepend contains=beanAccount,beanComment
+syn region beanCustom matchgroup=beanKeyword start="custom" skip="^\s" end="^" contained
+            \ keepend contains=beanAccount,beanAmount,beanComment,beanString,beanBool,beanMeta fold
+
+
+" map <F10> :for id in synstack(line("."), col(".")) <CR> echo synIDattr(id, "name") <CR> endfor <CR>
 
 syn region beanTxn matchgroup=beanKeyword start="\v\s+(txn|[*!&#?%PSTCURM])" skip="^\s"
             \ end="^" keepend contained fold
             \ contains=beanString,beanPost,beanComment,beanTag,beanLink,beanMeta
 syn region beanPost start="^\v\C\s+(([*!&#?%PSTCURM]\s+)?[A-Z])@=" end="$"
             \ contains=beanFlag,beanAccount,beanAmount,beanComment,beanCost,beanPrice
-syn region beanMeta matchgroup=beanTag start="^\v\C\s+[a-z][-_a-zA-Z0-9]*:(\s|$)@=" end="$"
+syn region beanMeta matchgroup=beanTag start="^\v\C\s+[_a-z][-_a-zA-Z0-9]*:(\s|$)@=" end="$"
 
 syn region beanCost start="{" end="}" contains=beanAmount contained
 syn match beanPrice "\V@@\?" nextgroup=beanAmount contained
 
-syn region beanHashHeaderFold
-    \ start="^\z(#\+\)"
-    \ skip="^\s*\z1#\+"
-    \ end="^\(#\)\@="
+syn match beanHeader "^#.*"
+syn region beanHashHeaderTopLevelFold
+    \ start="^#[^#]"
+    \ end="\(\n*\_^#[^#]\)\@="
     \ fold contains=TOP
+syn region beanHashHeaderFold
+    \ start="^\z\(##\+\)"
+    \ skip="^\z1#"
+    \ end="\(\n*\_^#[^#]\|^##\)\@="
+    \ fold contains=TOP
+    " \ skip="^#\z1#\+"
+    " \ end="\v((\n*^\#[^#])|^\z1@!#|^\z1[^#])@="
+" syn region beanHashHeaderFold
+"     \ start="^\z(#\+\)"
+"     \ skip="^\z1#\+"
+"     \ end="\v(\n*((\z1)@!\#|^\#[^#])|^(\z1))@="
+"     \ fold contains=TOP
 
 syn region beanStarHeaderFold
     \ start="^\z(\*\+\)"
@@ -85,6 +103,7 @@ highlight default link beanString String
 highlight default link beanComment Comment
 highlight default link beanAccount Identifier
 highlight default link beanAmount Number
+highlight default link beanBool Boolean
 highlight default link beanCurrency Number
 highlight default link beanCost Number
 highlight default link beanPrice Number
@@ -92,3 +111,4 @@ highlight default link beanTag Tag
 highlight default link beanLink Comment
 highlight default link beanMeta Special
 highlight default link beanFlag Keyword
+highlight default link beanHeader PreProc
