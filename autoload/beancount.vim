@@ -262,7 +262,7 @@ function! beancount#get_context() abort
     setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
     call append(0, split(l:context, '\v\n'))
     %substitute/^\*/ /e
-    call search('^-\+ Transaction')
+    call search('^ \* Transaction -\+')
     normal! 2jzt
 endfunction
 
