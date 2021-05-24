@@ -107,8 +107,8 @@ highlight default link beanBool Boolean
 highlight default link beanCurrency Number
 highlight default link beanCost Number
 highlight default link beanPrice Number
-highlight default link beanTag Tag
+highlight default link beanTag Comment
 highlight default link beanLink Comment
-highlight default link beanMeta Special
+highlight default link beanMeta Comment
 highlight default link beanFlag Keyword
 highlight default link beanHeader PreProc
