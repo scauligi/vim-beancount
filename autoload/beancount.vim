@@ -150,6 +150,8 @@ for index, entry in enumerate(entries):
         accounts.add(entry.account)
         if entry.currencies:
             currencies.update(entry.currencies)
+    elif isinstance(entry, data.Close):
+        accounts.remove(entry.account)
     elif isinstance(entry, data.Commodity):
         currencies.add(entry.currency)
     elif isinstance(entry, data.Event):
