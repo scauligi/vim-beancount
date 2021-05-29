@@ -124,7 +124,8 @@ function! beancount#get_root() abort
     endif
     let l:rootname = matchstr(getline(2), 'root:\s*\zs.*')
     if l:rootname != ""
-      return expand('%:p:h') . '/' . l:rootname
+      let b:beancount_root = expand('%:p:h') . '/' . l:rootname
+      return b:beancount_root
     endif
     return expand('%')
 endfunction
