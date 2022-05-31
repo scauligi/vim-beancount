@@ -1,9 +1,9 @@
 let s:using_python3 = has('python3')
 
 " Equivalent to python's startswith
-" Matches based on user's ignorecase preference
+" Matches ignoring case
 function! s:startswith(string, prefix) abort
-    return strpart(a:string, 0, strlen(a:prefix)) == a:prefix
+    return strpart(a:string, 0, strlen(a:prefix)) ==? a:prefix
 endfunction
 
 " Align currency on decimal point.
@@ -70,6 +70,9 @@ let s:directives = ['open', 'close', 'commodity', 'txn', 'balance', 'pad', 'note
 function! beancount#complete(findstart, base) abort
     if a:findstart
         let l:col = searchpos('\s', 'bn', line('.'))[1]
+        if count(map(synstack(line("."), col(".")), "synIDattr(v:val, 'name')"), 'beanString', 1)
+          let l:col = searchpos('\s"', 'bn', line('.'))[1]
+        endif
         if l:col == 0
             return -1
         else
@@ -92,7 +95,7 @@ function! beancount#complete(findstart, base) abort
     let l:rest = strpart(a:base, 1)
 
     if l:partial_line =~# '^\d\d\d\d\(-\|/\)\d\d\1\d\d event $' && l:first ==# '"'
-        return beancount#complete_basic(b:beancount_events, l:rest, '"')
+        return beancount#complete_basic(b:beancount_events, l:rest, '"', '"')
     endif
 
     let l:two_tokens = searchpos('\S\+\s', 'bn', line('.'))[1]
@@ -111,10 +114,11 @@ function! beancount#complete(findstart, base) abort
         return beancount#complete_basic(b:beancount_links, l:rest, '^')
     elseif l:first ==# '"'
         call beancount#load_payees()
-        return beancount#complete_basic(b:beancount_payees, l:rest, '"')
+        return beancount#complete_basic(b:beancount_payees, l:rest, '"', '"')
     else
         call beancount#load_accounts()
-        return beancount#complete_account(a:base)
+        " return beancount#complete_account(a:base)
+        return beancount#complete_basic(b:beancount_accounts, a:base, '')
     endif
 endfunction
 
@@ -212,18 +216,19 @@ function! beancount#load_payees() abort
 endfunction
 
 " General completion function
-function! beancount#complete_basic(input, base, prefix) abort
-    let l:matches = filter(copy(a:input), 's:startswith(v:val, a:base)')
+function! beancount#complete_basic(input, base, prefix, suffix = "") abort
+    " let l:matches = filter(copy(a:input), 's:startswith(v:val, a:base)')
+    let l:matches = matchfuzzy(a:input, a:base)
 
-    return map(l:matches, 'a:prefix . v:val')
+    return map(l:matches, 'a:prefix . v:val . a:suffix')
 endfunction
 
-" Complete account name.
+" Complete account name, ignoring case.
 function! beancount#complete_account(base) abort
     if g:beancount_account_completion ==? 'chunks'
-        let l:pattern = '^\V' . substitute(a:base, ':', '\\[^:]\\*:', 'g') . '\[^:]\*'
+        let l:pattern = '\c^\V' . substitute(a:base, ':', '\\[^:]\\*:', 'g') . '\[^:]\*'
     else
-        let l:pattern = '^\V\.\*' . substitute(a:base, ':', '\\.\\*:\\.\\*', 'g') . '\.\*'
+        let l:pattern = '\c^\V\.\*' . substitute(a:base, ':', '\\.\\*:\\.\\*', 'g') . '\.\*'
     endif
 
     let l:matches = []
@@ -299,4 +304,22 @@ function! beancount#explode_folds() abort
     execute  "silent folddoclosed " . l:pattern . " foldopen"
     call setpos('.', l:cur)
     let &hlsearch=1
+endfunction
+
+function! beancount#foldtext() abort
+  let foldtext = foldtext()
+  let nextline = getline(v:foldstart + 1)
+  let date = matchstr(nextline, '^\s\+date:\s*\zs\d\{4\}-\d\{2\}-\d\{2\}\ze\s*$')
+  if date != ""
+    let origdate = matchstr(foldtext, '\d\{4\}-\d\{2\}-\d\{2\}')
+    if origdate < date
+      let marker = " <"
+    elseif origdate > date
+      let marker = " >"
+    else
+      let marker = " *"
+    endif
+    let foldtext = substitute(foldtext, '\d\{4\}-\d\{2\}-\d\{2\} \*', date .. marker, "") .. "  (" .. origdate .. ")"
+  endif
+  return foldtext
 endfunction
