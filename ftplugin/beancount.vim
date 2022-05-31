@@ -3,14 +3,16 @@ if exists('b:did_ftplugin')
 endif
 
 let b:did_ftplugin = 1
-let b:undo_ftplugin = 'setlocal foldmethod< foldlevel< foldcolumn< comments< commentstring<'
+let b:undo_ftplugin = 'setlocal foldmethod< foldlevel< foldcolumn< foldtext< comments< commentstring< iskeyword<'
 
 setl regexpengine=1
 setl foldmethod=syntax
 setl foldlevel=1
 setl foldcolumn=4
+setl foldtext=beancount#foldtext()
 setl comments=b:;
 setl commentstring=;%s
+setl iskeyword+=-
 compiler beancount
 
 " This variable customizes the behavior of the AlignCommodity command.
