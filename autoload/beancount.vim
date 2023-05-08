@@ -1,4 +1,5 @@
-let s:using_python3 = has('python3')
+let s:path = fnamemodify(resolve(expand('<sfile>:p')), ':h')
+let s:using_python3 = has('job')
 
 " Equivalent to python's startswith
 " Matches ignoring case
@@ -134,49 +135,15 @@ function! beancount#get_root() abort
     return expand('%')
 endfunction
 
+function! beancount#dump(ch, msg) abort
+  echom a:msg
+endfunction
+
 function! beancount#load_everything() abort
-    if s:using_python3 && !exists('b:beancount_loaded')
+    if !exists('b:beancount_loaded')
         let l:root = beancount#get_root()
-python3 << EOF
-import vim
-from beancount import loader
-from beancount.core import data
-
-accounts = set()
-currencies = set()
-events = set()
-links = set()
-payees = set()
-tags = set()
-
-entries, errors, options_map = loader.load_file(vim.eval('l:root'))
-for index, entry in enumerate(entries):
-    if isinstance(entry, data.Open):
-        accounts.add(entry.account)
-        if entry.currencies:
-            currencies.update(entry.currencies)
-    elif isinstance(entry, data.Close):
-        accounts.remove(entry.account)
-    elif isinstance(entry, data.Commodity):
-        currencies.add(entry.currency)
-    elif isinstance(entry, data.Event):
-        events.add(entry.type)
-    elif isinstance(entry, data.Transaction):
-        if entry.tags:
-            tags.update(entry.tags)
-        if entry.links:
-            links.update(entry.links)
-        if entry.payee:
-            payees.add(entry.payee)
-
-vim.command('let b:beancount_accounts = [{}]'.format(','.join(repr(x) for x in sorted(accounts))))
-vim.command('let b:beancount_currencies = [{}]'.format(','.join(repr(x) for x in sorted(currencies))))
-vim.command('let b:beancount_events = [{}]'.format(','.join(repr(x) for x in sorted(events))))
-vim.command('let b:beancount_links = [{}]'.format(','.join(repr(x) for x in sorted(links))))
-vim.command('let b:beancount_payees = [{}]'.format(','.join(repr(x) for x in sorted(payees))))
-vim.command('let b:beancount_tags = [{}]'.format(','.join(repr(x) for x in sorted(tags))))
-vim.command('let b:beancount_loaded = v:true'.format(','.join(repr(x) for x in sorted(tags))))
-EOF
+        let l:script = s:path .. '/' .. 'beancount_load_everything.py'
+        let s:job = job_start(["python3", l:script, l:root], #{mode: "json"})
     endif
 endfunction
 

@@ -45,3 +45,5 @@ let maplocalleader = ","
 nnoremap <buffer> <LocalLeader>c :GetContext<CR>
 nnoremap <buffer> <LocalLeader>l :GetLinked<CR>
 nnoremap <buffer> <LocalLeader>/ :ExplodeFolds<CR>
+
+call beancount#load_everything()
