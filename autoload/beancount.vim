@@ -301,18 +301,40 @@ endfunction
 
 function! beancount#foldtext() abort
   let foldtext = foldtext()
-  let nextline = getline(v:foldstart + 1)
-  let date = matchstr(nextline, '^\s\+date:\s*\zs\d\{4\}-\d\{2\}-\d\{2\}\ze\s*$')
-  if date != ""
-    let origdate = matchstr(foldtext, '\d\{4\}-\d\{2\}-\d\{2\}')
-    if origdate < date
-      let marker = " <"
-    elseif origdate > date
-      let marker = " >"
-    else
-      let marker = " *"
+  let thisline = getline(v:foldstart)
+  if thisline =~# '\v^\d{4}-\d{2}-\d{2}\s+\A'
+    let nextline = getline(v:foldstart + 1)
+    let date = matchstr(nextline, '\v^\s+date:\s*\zs\d{4}-\d{2}-\d{2}\ze\s*$')
+    if date != ""
+      let origdate = matchstr(foldtext, '\v\d{4}-\d{2}-\d{2}')
+      if origdate < date
+        let marker = " <"
+      elseif origdate > date
+        let marker = " >"
+      else
+        let marker = " *"
+      endif
+      let foldtext = substitute(foldtext, '\v\d{4}-\d{2}-\d{2} \*?', date .. marker, "") .. "  (" .. origdate .. ")"
     endif
-    let foldtext = substitute(foldtext, '\d\{4\}-\d\{2\}-\d\{2\} \*\=', date .. marker, "") .. "  (" .. origdate .. ")"
+  else
+    let foldend = v:foldend
+    let lastline = getline(foldend)
+    while lastline =~# '\v^\s*$'
+      let foldend -= 1
+      if foldend == v:foldstart
+        return foldtext
+      endif
+      let lastline = getline(foldend)
+    endwhile
+    if lastline =~# '\v^\d{4}-\d{2}-\d{2}\s+balance'
+      let [_, date, acct, amt; rest] = matchlist(lastline, '\v^(\d{4}-\d{2}-\d{2})\s+balance\s+(\S+)\s+(.*)$')
+      let amt = substitute(amt, '\v +', ' ', 'g')
+      let foldtext = printf("%-64s%13s  %s", foldtext, amt, date)
+      if stridx(thisline, acct) == -1
+        let foldtext ..= " (" .. acct .. ")"
+      endif
+      return foldtext
+    endif
   endif
   return foldtext
 endfunction
