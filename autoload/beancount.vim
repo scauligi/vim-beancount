@@ -266,30 +266,6 @@ function! beancount#get_context() abort
     call search('^ \* Transaction -\+')
     normal! 2jzt
     wincmd p
-
-    " if exists("t:beancount_buffer")
-    "   let l:winnr = bufwinnr(t:beancount_buffer)
-    "   if l:winnr == -1
-    "     noswapfile keepalt botright 20 new __bean-doctor__
-    "     setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
-    "   else
-    "     execute "keepalt" l:winnr "wincmd w"
-    "   endif
-    "   normal! gg"_dG
-    " else
-      " noswapfile keepalt botright 20 new _bean-doctor
-      " let b:is_beancount_buffer = v:true
-      " let t:beancount_buffer = bufnr()
-      " setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
-      " setfiletype beancount
-      " setlocal nofoldenable nowrap foldcolumn=0 signcolumn=no
-    " endif
-
-    " call append(0, split(l:context, '\v\n'))
-    " silent %substitute/^\*/ /e
-    " call search('^ \* Transaction -\+')
-    " normal! 2jzt
-    " wincmd p
 endfunction
 
 " Call bean-doctor on the current line and dump output into a scratch buffer
@@ -298,10 +274,6 @@ function! beancount#get_linked() abort
     let l:context = system('bean-doctor linked ' . l:root . ' ' . expand('%') . ':' . line('.'))
     let l:context = substitute(l:context, "\n   ", "\n", "g")
     call beancount#create_preview(l:context)
-    " botright new
-    " setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
-    " call append(0, split(l:context, '\v\n'))
-    " %substitute/^   //e
     normal! G
     wincmd p
 endfunction
