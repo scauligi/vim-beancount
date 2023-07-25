@@ -15,6 +15,8 @@ function! coc#source#beancount#get_startcol(opt) abort
 endfunction
 
 function! coc#source#beancount#complete(opt, cb) abort
+    if &l:buftype == "nofile" | return | endif
+
     let l:partial_line = strpart(a:opt['line'], 0, a:opt['colnr']-1)
     " Match directive types
     if l:partial_line =~# '^\d\d\d\d\(-\|/\)\d\d\1\d\d $'

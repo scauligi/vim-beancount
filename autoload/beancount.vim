@@ -140,6 +140,7 @@ function! beancount#dump(ch, msg) abort
 endfunction
 
 function! beancount#load_everything() abort
+    if &l:buftype == "nofile" | return | endif
     if !exists('b:beancount_loaded')
         let l:root = beancount#get_root()
         let l:script = s:path .. '/' .. 'beancount_load_everything.py'
