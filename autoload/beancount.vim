@@ -229,27 +229,81 @@ vim.command('return [{}]'.format(','.join(repr(x) for x in sorted(result_list)))
 EOF
 endfunction
 
+" Create a preview window for bean-doctor output
+function! beancount#create_preview(text) abort
+    let l:text = substitute(a:text, ' \+\n', '\n', "g")
+    let l:bufnr = bufadd("__bean-doctor__")
+    call bufload(l:bufnr)
+    call setbufvar(l:bufnr, "&buftype", "nofile")
+    call setbufvar(l:bufnr, "&bufhidden", "hide")
+    call setbufvar(l:bufnr, "&swapfile", v:false)
+    call setbufvar(l:bufnr, "&buflisted", v:false)
+    call setbufvar(l:bufnr, "&filetype", "beancount")
+    call setbufvar(l:bufnr, "&foldenable", v:false)
+    call setbufvar(l:bufnr, "&wrap", v:false)
+    call setbufvar(l:bufnr, "&foldcolumn", 0)
+    call setbufvar(l:bufnr, "&signcolumn", "no")
+    call setbufvar(l:bufnr, "signifycolumn", 1)
+    call setbufvar(l:bufnr, "is_beancount_buffer", v:true)
+    call deletebufline(l:bufnr, 1, "$")
+    call setbufline(l:bufnr, 1, split(l:text, '\n'))
+    pclose
+    pedit __bean-doctor__
+    wincmd P
+    20 wincmd _
+endfunction
+
+
 " Call bean-doctor on the current line and dump output into a scratch buffer
 function! beancount#get_context() abort
     let l:root = beancount#get_root()
     let l:context = system('bean-doctor context ' . l:root . ' ' . expand('%') . ':' . line('.'))
-    botright new
-    setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
-    call append(0, split(l:context, '\v\n'))
-    %substitute/^\*/ /e
+
+    let l:context = substitute(l:context, '\n\*', '\n ', "g")
+
+    call beancount#create_preview(l:context)
+
     call search('^ \* Transaction -\+')
     normal! 2jzt
+    wincmd p
+
+    " if exists("t:beancount_buffer")
+    "   let l:winnr = bufwinnr(t:beancount_buffer)
+    "   if l:winnr == -1
+    "     noswapfile keepalt botright 20 new __bean-doctor__
+    "     setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+    "   else
+    "     execute "keepalt" l:winnr "wincmd w"
+    "   endif
+    "   normal! gg"_dG
+    " else
+      " noswapfile keepalt botright 20 new _bean-doctor
+      " let b:is_beancount_buffer = v:true
+      " let t:beancount_buffer = bufnr()
+      " setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted
+      " setfiletype beancount
+      " setlocal nofoldenable nowrap foldcolumn=0 signcolumn=no
+    " endif
+
+    " call append(0, split(l:context, '\v\n'))
+    " silent %substitute/^\*/ /e
+    " call search('^ \* Transaction -\+')
+    " normal! 2jzt
+    " wincmd p
 endfunction
 
 " Call bean-doctor on the current line and dump output into a scratch buffer
 function! beancount#get_linked() abort
     let l:root = beancount#get_root()
     let l:context = system('bean-doctor linked ' . l:root . ' ' . expand('%') . ':' . line('.'))
-    botright new
-    setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
-    call append(0, split(l:context, '\v\n'))
-    %substitute/^   //e
-    normal! gg
+    let l:context = substitute(l:context, "\n   ", "\n", "g")
+    call beancount#create_preview(l:context)
+    " botright new
+    " setlocal buftype=nofile bufhidden=hide noswapfile filetype=beancount nofoldenable nolist
+    " call append(0, split(l:context, '\v\n'))
+    " %substitute/^   //e
+    normal! G
+    wincmd p
 endfunction
 
 " Expand all folds with prompted pattern
@@ -286,7 +340,7 @@ function! beancount#foldtext() abort
     else
       let marker = " *"
     endif
-    let foldtext = substitute(foldtext, '\d\{4\}-\d\{2\}-\d\{2\} \*', date .. marker, "") .. "  (" .. origdate .. ")"
+    let foldtext = substitute(foldtext, '\d\{4\}-\d\{2\}-\d\{2\} \*\=', date .. marker, "") .. "  (" .. origdate .. ")"
   endif
   return foldtext
 endfunction

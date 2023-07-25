@@ -7,6 +7,10 @@ if exists(':CompilerSet') != 2		" older Vim always used :setlocal
   command -nargs=* CompilerSet setlocal <args>
 endif
 
+if &l:buftype == "nofile"
+  finish
+endif
+
 let s:cpo_save = &cpoptions
 set cpoptions-=C
 
