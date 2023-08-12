@@ -302,6 +302,7 @@ endfunction
 
 function! beancount#foldtext() abort
   let foldtext = foldtext()
+  let foldtext = substitute(foldtext, '\v-\zs *\d{1,3} lines', ' \0', '')
   let thisline = getline(v:foldstart)
   if thisline =~# '\v^\d{4}-\d{2}-\d{2}\s+\A'
     let nextline = getline(v:foldstart + 1)
@@ -330,7 +331,8 @@ function! beancount#foldtext() abort
     if lastline =~# '\v^\d{4}-\d{2}-\d{2}\s+balance'
       let [_, date, acct, amt; rest] = matchlist(lastline, '\v^(\d{4}-\d{2}-\d{2})\s+balance\s+(\S+)\s+(.*)$')
       let amt = substitute(amt, '\v +', ' ', 'g')
-      let foldtext = printf("%-64s%13s  %s", foldtext, amt, date)
+      let foldtext = substitute(foldtext, '\v *\d* lines: ', ' ', '')
+      let foldtext = printf("%-54s%13s  %s", foldtext, amt, date)
       if stridx(thisline, acct) == -1
         let foldtext ..= " (" .. acct .. ")"
       endif
