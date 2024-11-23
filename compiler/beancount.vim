@@ -18,6 +18,7 @@ exec "CompilerSet makeprg=bean-check\\" beancount#get_root()
 CompilerSet errorformat=%-G         " Skip blank lines
 CompilerSet errorformat+=%f:%l:\ %m  " File:line: message
 CompilerSet errorformat+=%-G\ %.%#   " Skip indented lines.
+CompilerSet errorformat+=%m\ %f:%l%\\s%#  " Message: file:line:
 
 let &cpoptions = s:cpo_save
 unlet s:cpo_save
